@@ -2,103 +2,123 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>SHRI GANESH MOTORS BORUNDA Number Plate Entry</title>
+  <title>Shri Ganesh Motors Number Plate Order</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
   <style>
-    body {
-      font-family: Arial, sans-serif;
-      margin: 30px;
-    }
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      margin-bottom: 20px;
-    }
-    table, th, td {
-      border: 1px solid #999;
-    }
-    th, td {
-      padding: 10px;
-      text-align: center;
-    }
-    input[type="text"], input[type="date"] {
-      width: 100%;
-      padding: 5px;
-    }
-    button {
-      padding: 8px 15px;
-      margin-top: 10px;
-      cursor: pointer;
+    body { font-family: Arial, sans-serif; margin: 20px; background: #f4f4f4; }
+    h2 { text-align: center; color: #b30000; }
+    table { width: 100%; border-collapse: collapse; margin-top: 10px; background: white; }
+    th, td { border: 1px solid #999; padding: 8px; text-align: center; }
+    input[type="text"] { width: 100%; padding: 5px; box-sizing: border-box; }
+    button { margin: 10px 5px; padding: 10px 15px; background: #b30000; color: white; border: none; cursor: pointer; border-radius: 4px; }
+    button:hover { background: #800000; }
+    .footer { text-align: center; margin-top: 20px; color: #555; }
+    @media screen and (max-width: 600px) {
+      table, th, td { font-size: 12px; }
     }
   </style>
 </head>
 <body>
 
-  <h2>SHRI GANESH MOTORS BORUNDA Number Plate Entry</h2>
+<h2>Shri Ganesh Motors Number Plate Order</h2>
 
-  <table id="entryTable">
-    <thead>
-      <tr>
-        <th>Reg No.</th>
-        <th>Frame No.</th>
-        <th>Engine No.</th>
-        <th>Date</th>
-      </tr>
-    </thead>
-    <tbody id="tableBody">
-      <!-- Dynamic rows -->
-    </tbody>
-  </table>
+<table id="entryTable">
+  <thead>
+    <tr id="headerRow"></tr>
+    <tr id="controlRow"></tr>
+  </thead>
+  <tbody id="tableBody"></tbody>
+</table>
 
-  <button onclick="addRow()">+ Add Row</button>
-  <button onclick="downloadExcel()">⬇ Download to Excel</button>
+<button onclick="addRow()">+ Add Row</button>
+<button onclick="downloadExcel()">⬇ Download to Excel</button>
 
-  <script>
-    function addRow() {
-      const tbody = document.getElementById("tableBody");
-      const row = document.createElement("tr");
+<div class="footer">Developed by Jitendra Badiyasar</div>
 
-      row.innerHTML = `
-        <td><input type="text" placeholder="Reg No."></td>
-        <td><input type="text" placeholder="Frame No."></td>
-        <td><input type="text" placeholder="Engine No."></td>
-        <td><input type="date"></td>
+<script>
+  let columns = ["Reg No.", "Frame No.", "Engine No.", "Date"];
+
+  function renderTable() {
+    const headerRow = document.getElementById("headerRow");
+    const controlRow = document.getElementById("controlRow");
+    headerRow.innerHTML = "";
+    controlRow.innerHTML = "";
+
+    columns.forEach((col, index) => {
+      // Header with editable label
+      const th = document.createElement("th");
+      th.contentEditable = true;
+      th.textContent = col;
+      th.oninput = () => columns[index] = th.textContent;
+      headerRow.appendChild(th);
+
+      // Controls
+      const ctrl = document.createElement("th");
+      ctrl.innerHTML = `
+        <button onclick="addColumn(${index})">+</button>
+        <button onclick="removeColumn(${index})">x</button>
       `;
+      controlRow.appendChild(ctrl);
+    });
 
-      tbody.appendChild(row);
-    }
+    // Update rows
+    const rows = document.querySelectorAll("#tableBody tr");
+    rows.forEach(row => {
+      while (row.cells.length > columns.length) row.deleteCell(-1);
+      while (row.cells.length < columns.length) {
+        const td = document.createElement("td");
+        td.innerHTML = '<input type="text">';
+        row.appendChild(td);
+      }
+    });
+  }
 
-    function downloadExcel() {
-      const table = document.getElementById("entryTable");
-      const rows = [["Reg No.", "Frame No.", "Engine No.", "Date"]];
+  function addColumn(index) {
+    columns.splice(index + 1, 0, "New Column");
+    const rows = document.querySelectorAll("#tableBody tr");
+    rows.forEach(row => {
+      const td = document.createElement("td");
+      td.innerHTML = '<input type="text">';
+      row.insertBefore(td, row.cells[index + 1]);
+    });
+    renderTable();
+  }
 
-      Array.from(table.rows).slice(1).forEach(row => {
-        const inputs = row.querySelectorAll("input");
-        const rowData = Array.from(inputs).map(cell => cell.value || "");
-        if (rowData.some(val => val.trim() !== "")) {
-          rows.push(rowData);
-        }
-      });
+  function removeColumn(index) {
+    if (columns.length <= 1) return alert("At least one column is required.");
+    columns.splice(index, 1);
+    const rows = document.querySelectorAll("#tableBody tr");
+    rows.forEach(row => row.deleteCell(index));
+    renderTable();
+  }
 
-      const worksheet = XLSX.utils.aoa_to_sheet(rows);
+  function addRow() {
+    const tbody = document.getElementById("tableBody");
+    const tr = document.createElement("tr");
+    columns.forEach(() => {
+      const td = document.createElement("td");
+      td.innerHTML = '<input type="text">';
+      tr.appendChild(td);
+    });
+    tbody.appendChild(tr);
+  }
 
-      // Auto column width based on content
-      const maxWidths = rows[0].map((_, colIndex) => {
-        return {
-          wch: Math.max(
-            ...rows.map(row => (row[colIndex] ? row[colIndex].toString().length : 0))
-          ) + 2
-        };
-      });
-      worksheet["!cols"] = maxWidths;
+  function downloadExcel() {
+    const data = [columns];
+    document.querySelectorAll("#tableBody tr").forEach(row => {
+      const values = Array.from(row.querySelectorAll("input")).map(input => input.value);
+      if (values.some(v => v)) data.push(values);
+    });
+    const ws = XLSX.utils.aoa_to_sheet(data);
+    ws['!cols'] = columns.map((_, i) => ({ wch: Math.max(...data.map(row => (row[i] || '').length)) + 2 }));
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Number Plate Data");
+    XLSX.writeFile(wb, "Number_Plate_Orders.xlsx");
+  }
 
-      const workbook = XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(workbook, worksheet, "RK Data");
-
-      XLSX.writeFile(workbook, "RK_Number_Plate_Data.xlsx");
-    }
-
-    window.onload = addRow;
-  </script>
+  renderTable();
+  addRow();
+</script>
 </body>
 </html>
