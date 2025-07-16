@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>SHRI GANESH MOTORS BORUNDA Number Plate Entry</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 30px;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: 20px;
+    }
+    table, th, td {
+      border: 1px solid #999;
+    }
+    th, td {
+      padding: 10px;
+      text-align: center;
+    }
+    input[type="text"], input[type="date"] {
+      width: 100%;
+      padding: 5px;
+    }
+    button {
+      padding: 8px 15px;
+      margin-top: 10px;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+
+  <h2>SHRI GANESH MOTORS BORUNDA Number Plate Entry</h2>
+
+  <table id="entryTable">
+    <thead>
+      <tr>
+        <th>Reg No.</th>
+        <th>Frame No.</th>
+        <th>Engine No.</th>
+        <th>Date</th>
+      </tr>
+    </thead>
+    <tbody id="tableBody">
+      <!-- Dynamic rows -->
+    </tbody>
+  </table>
+
+  <button onclick="addRow()">+ Add Row</button>
+  <button onclick="downloadExcel()">⬇ Download to Excel</button>
+
+  <script>
+    function addRow() {
+      const tbody = document.getElementById("tableBody");
+      const row = document.createElement("tr");
+
+      row.innerHTML = `
+        <td><input type="text" placeholder="Reg No."></td>
+        <td><input type="text" placeholder="Frame No."></td>
+        <td><input type="text" placeholder="Engine No."></td>
+        <td><input type="date"></td>
+      `;
+
+      tbody.appendChild(row);
+    }
+
+    function downloadExcel() {
+      const table = document.getElementById("entryTable");
+      const rows = [["Reg No.", "Frame No.", "Engine No.", "Date"]];
+
+      Array.from(table.rows).slice(1).forEach(row => {
+        const inputs = row.querySelectorAll("input");
+        const rowData = Array.from(inputs).map(cell => cell.value || "");
+        if (rowData.some(val => val.trim() !== "")) {
+          rows.push(rowData);
+        }
+      });
+
+      const worksheet = XLSX.utils.aoa_to_sheet(rows);
+
+      // Auto column width based on content
+      const maxWidths = rows[0].map((_, colIndex) => {
+        return {
+          wch: Math.max(
+            ...rows.map(row => (row[colIndex] ? row[colIndex].toString().length : 0))
+          ) + 2
+        };
+      });
+      worksheet["!cols"] = maxWidths;
+
+      const workbook = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(workbook, worksheet, "RK Data");
+
+      XLSX.writeFile(workbook, "RK_Number_Plate_Data.xlsx");
+    }
+
+    window.onload = addRow;
+  </script>
+</body>
+</html>
